@@ -9,25 +9,48 @@ const profile = {
     "monthly-budget": 3000,
     "days-per-week": 5,
     "hour-per-day": 5,
-    "vacation-per-year": 4
+    "vacation-per-year": 4,
+    "value-hour": 75
 }
 
 const jobs = [
     {
         id: 1,
-        name: "Pizzaria ",
+        name: "Pizzaria Guloso ",
         "daily-hours": 2, 
         "total-hours": 60,
-        created_at: Date.now() 
+        created_at: Date.now()
     },
     {
         id:2,
         name: "OneTwo Project ",
         "daily-hours": 3, 
         "total-hours": 47,
-        created_at: Date.now() 
+        created_at: Date.now()
     }
 ]
+
+function remainingDays(job){
+    //Cálculo de tempo restante
+    const remainingDays = (job["total-hours"]/job["daily-hours"]).toFixed()
+    //tofixed - se esse número for quebrado, arredonde e deixe inteiro
+
+    const createdDate = new Date(job.created_at)
+    const dueDay = createdDate.getDay() + Number(remainingDays)
+    //Criação do prazo
+    const dueDateInMs = createdDate.setDate(dueDay)
+
+    const timeDiffnMs = dueDateInMs - Date.now()
+    //DataFuturo - agora (tempo em mílissegundos)
+
+    //transformar mili sem dias
+    const dayInMs = 1000 * 60 * 60 * 24
+    const dayDiff = Math.floor(timeDiffnMs/dayInMs)
+
+    //restam x dias
+    return dayDiff
+}
+
 
 //basePath = caminho base     
 //__dirname - vai atrás das traduções
@@ -37,7 +60,30 @@ const jobs = [
 
 // req, res
 // mudar render, já que não vai mais enviar o arquivo, vai renderizar o arquivo para render
-routes.get('/', (req, res) => res.render(views + "index",{jobs} ))
+routes.get('/', (req, res) => {
+
+    const updatedJobs = jobs.map((job) => {
+
+        //Ajustes no job
+        const remaining = remainingDays(job)
+        const status = remaining <= 0 ? 'done' : 'progress'
+        //operação ternária - if ternário
+
+        return {
+            ...job, //espalhamento
+            remaining,
+            status,
+            budget: profile["value-hour"] * job["total-hours"]
+        }
+    })
+
+    return res.render(views + "index", {jobs: updatedJobs } )
+    
+})
+
+
+
+
 routes.get('/job', (req, res) => res.render(views + "job"))
 routes.post('/job', (req, res) => {
     //req.body = { name: 'Trabalho legal', 'daily-hours': '5', 'total-hours': '15' }
